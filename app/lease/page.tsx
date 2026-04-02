@@ -1,8 +1,20 @@
 "use client";
+import Link from "next/link";
+import { useReducer, useState, useEffect, useMemo } from "react";
+// 1. IMPORT RECHARTS COMPONENTS
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+} from "recharts";
 
-import { useReducer, useState, useEffect } from "react";
-
-// 1. THE DATA FLEET (This is your "Inventory")
+// THE DATA FLEET
 const FLEET = [
   { id: 1, name: "John Deere 5075E", type: "Utility Tractor", rate: 45000 },
   { id: 2, name: "CAT 320D", type: "Hydraulic Excavator", rate: 125000 },
@@ -11,7 +23,7 @@ const FLEET = [
 ];
 
 const initialState = {
-  equipment: FLEET[0].name, // Defaults to John Deere
+  equipment: FLEET[0].name,
   dailyRate: FLEET[0].rate,
   days: 1,
   total: FLEET[0].rate,
@@ -26,7 +38,7 @@ function leaseReducer(state: any, action: any) {
         equipment: action.payload.name,
         dailyRate: action.payload.rate,
         total: state.days * action.payload.rate,
-        status: "idle", // Reset status if they change machines
+        status: "idle",
       };
     case "SET_DAYS":
       const newDays = Math.max(1, Number(action.payload) || 0);
@@ -49,8 +61,19 @@ function leaseReducer(state: any, action: any) {
 export default function Terratract() {
   const [state, dispatch] = useReducer(leaseReducer, initialState);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Auto-Reset Logic
+  // 2. GENERATE CHART DATA (Dynamic Financial Projection)
+  const chartData = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => ({
+      day: `Day ${i + 1}`,
+      cost: state.dailyRate * (i + 1),
+    }));
+  }, [state.dailyRate]);
+
   useEffect(() => {
     if (state.status === "confirmed") {
       const timer = setTimeout(() => {
@@ -70,44 +93,57 @@ export default function Terratract() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       {/* 🏛️ TOP NAVIGATION BAR */}
-      <nav className="w-full border-b border-slate-800 bg-slate-900/50 p-6 flex justify-between items-center">
+      <nav className="w-full border-b border-slate-800 bg-slate-900/50 p-6 flex justify-between items-center sticky top-0 z-50 backdrop-blur-md">
         <div>
-          <h1 className="text-2xl font-black tracking-tighter text-emerald-500 flex items-center gap-2">
-            TERRATRACT{" "}
-            <span className="bg-emerald-500/10 text-emerald-500 text-[10px] px-2 py-1 rounded border border-emerald-500/20">
-              ENTERPRISE v2.6
-            </span>
-          </h1>
-          <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-4">
+            {/* 🚀 THE NEW HOME BUTTON */}
+            <Link
+              href="/"
+              className="group flex items-center gap-2 bg-slate-800/50 hover:bg-emerald-500/20 border border-slate-700 hover:border-emerald-500/50 px-3 py-2 rounded-lg transition-all duration-300"
+            >
+              <div className="w-2 h-2 rounded-full bg-slate-500 group-hover:bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-slate-400 group-hover:text-emerald-400 uppercase tracking-widest">
+                Return to HQ
+              </span>
+            </Link>
+
+            <h1 className="text-2xl font-black tracking-tighter text-emerald-500 flex items-center gap-2">
+              TERRATRACT{" "}
+              <span className="bg-emerald-500/10 text-emerald-500 text-[10px] px-2 py-1 rounded border border-emerald-500/20">
+                ENTERPRISE v2.6
+              </span>
+            </h1>
+          </div>
+          <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] mt-1">
             Mechanical Systems Division • Jos, Nigeria
           </p>
         </div>
-        <div className="flex gap-8 text-[10px] font-mono text-slate-400">
+        <div className="hidden md:flex gap-8 text-[10px] font-mono text-slate-400">
           <div className="flex flex-col items-end">
             <span>OPERATOR</span>
-            <span className="text-emerald-400">MANASSEH_DEV</span>
+            <span className="text-emerald-400 font-bold">MANASSEH_DEV</span>
           </div>
           <div className="flex flex-col items-end text-right">
             <span>SYSTEM_CLOCK</span>
-            <span>{new Date().toLocaleTimeString()}</span>
+            <span>
+              {mounted ? new Date().toLocaleTimeString() : "INITIALIZING..."}
+            </span>
           </div>
         </div>
       </nav>
 
-      {/* 🏛️ MAIN CONTENT GRID */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0">
         {/* LEFT COLUMN: CONTROL PANEL */}
-        <section className="lg:col-span-4 border-r border-slate-800 p-10 bg-slate-900/20 overflow-y-auto">
+        <section className="lg:col-span-4 border-r border-slate-800 p-6 md:p-10 bg-slate-900/20">
           <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-10 border-b border-slate-800 pb-2">
             Deployment Controls
           </h2>
 
           <div className="space-y-10">
-            {/* NEW: DYNAMIC MACHINE SELECTOR */}
             <div>
-              <label className="block text-[10px] text-slate-500 uppercase tracking-[0.2em] mb-4">
+              <label className="block text-[10px] text-slate-500 uppercase tracking-[0.2em] mb-4 font-bold">
                 Select Fleet Unit
               </label>
               <div className="grid grid-cols-1 gap-3">
@@ -141,7 +177,7 @@ export default function Terratract() {
             </div>
 
             <div>
-              <label className="block text-xs text-slate-500 uppercase mb-4 tracking-widest">
+              <label className="block text-xs text-slate-500 uppercase mb-4 tracking-widest font-bold">
                 Lease Duration (Days)
               </label>
               <input
@@ -179,7 +215,8 @@ export default function Terratract() {
         </section>
 
         {/* RIGHT COLUMN: DATA MONITOR */}
-        <section className="lg:col-span-8 p-10 flex flex-col justify-between bg-slate-950 relative">
+        <section className="lg:col-span-8 p-6 md:p-10 flex flex-col justify-between bg-slate-950 relative overflow-hidden">
+          {/* Background Grid Pattern */}
           <div
             className="absolute inset-0 opacity-5 pointer-events-none"
             style={{
@@ -188,28 +225,106 @@ export default function Terratract() {
             }}
           ></div>
 
-          <div>
+          <div className="relative z-10">
             <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-10 border-b border-slate-800 pb-2">
-              Financial telemetry
+              Financial Telemetry
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
-              <div className="p-10 border border-slate-800 bg-slate-900/40 rounded-3xl backdrop-blur-sm">
+
+            {/* STAT CARDS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+              <div className="p-8 border border-slate-800 bg-slate-900/40 rounded-3xl backdrop-blur-sm">
                 <span className="text-slate-500 text-[10px] uppercase tracking-[0.3em] font-bold">
                   Total Commitment
                 </span>
-                <div className="text-7xl font-black text-white mt-6 tracking-tighter">
+                <div className="text-5xl md:text-6xl font-black text-white mt-4 tracking-tighter">
                   ₦{(state?.total || 0).toLocaleString()}
                 </div>
               </div>
-              <div className="p-10 border border-slate-800 bg-slate-900/40 rounded-3xl backdrop-blur-sm">
+              <div className="p-8 border border-slate-800 bg-slate-900/40 rounded-3xl backdrop-blur-sm">
                 <span className="text-slate-500 text-[10px] uppercase tracking-[0.3em] font-bold">
                   Lease Status
                 </span>
                 <div
-                  className={`text-5xl font-black mt-8 uppercase tracking-tight ${state.status === "confirmed" ? "text-emerald-500" : state.status === "processing" ? "text-amber-500 animate-pulse" : "text-slate-700"}`}
+                  className={`text-4xl md:text-5xl font-black mt-6 uppercase tracking-tight transition-all duration-500 ${
+                    state.status === "confirmed"
+                      ? "text-emerald-500"
+                      : state.status === "processing"
+                        ? "text-amber-500 animate-pulse"
+                        : "text-slate-700"
+                  }`}
                 >
                   {state.status}
                 </div>
+              </div>
+            </div>
+
+            {/* 📈 3. THE NEW RECHARTS SECTION */}
+            <div className="p-8 border border-slate-800 bg-slate-900/20 rounded-3xl backdrop-blur-sm">
+              <h3 className="text-[10px] text-slate-500 uppercase tracking-[0.2em] mb-8 font-bold">
+                7-Day Projected Commitment Curve
+              </h3>
+              <div className="h-[250px] w-full">
+                {mounted && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient
+                          id="colorCost"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="#10b981"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="#10b981"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#1e293b"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="day"
+                        stroke="#475569"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke="#475569"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v) => `₦${v / 1000}k`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#020617",
+                          border: "1px solid #1e293b",
+                          borderRadius: "12px",
+                        }}
+                        itemStyle={{ color: "#10b981", fontWeight: "bold" }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="cost"
+                        stroke="#10b981"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#colorCost)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
           </div>
